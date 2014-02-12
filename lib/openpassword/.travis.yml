@@ -1,0 +1,13 @@
+language: python
+python:
+  - "3.3"
+# command to run tests
+script: sh bin/tests
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#openpassword"
+    on_success: always
+    on_failure: always
+    skip_join: true
