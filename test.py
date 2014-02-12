@@ -3,6 +3,7 @@ import sys
 from PySide import QtCore, QtGui, QtUiTools
 from openpassword import AgileKeychain
 from openpassword.exceptions import InvalidPasswordException
+import pprint
 
 
 class OpenPasswordGUI(QtGui.QWidget):
@@ -21,6 +22,8 @@ class OpenPasswordGUI(QtGui.QWidget):
         self.list_view = self._find_child_by_name('listView')
         self.list_view.activated.connect(self._item_selected)
         self.list_view.clicked.connect(self._item_selected)
+
+        self.text_edit = self._find_child_by_name('plainTextEdit')
 
         self.main_ui.actionUnlock.triggered.connect(self.unlock)
         self.main_ui.actionLock.triggered.connect(self.lock)
@@ -60,8 +63,24 @@ class OpenPasswordGUI(QtGui.QWidget):
         self.list_view.setModel(model)
 
     def _item_selected(self, index):
-        unique_id = self._items[index.row()].uuid
-        print(self.keychain.get_item_by_unique_id(unique_id))
+        unique_id = self._items[index.row()].unique_id
+        item = self.keychain.get_item_by_unique_id(unique_id)
+        self._render_item(item)
+
+    def _render_item(self, item):
+        pp = pprint.PrettyPrinter(indent=4)
+        data = pp.pformat(item.data)
+
+        doc = QtGui.QTextDocument(data)
+        doc.setDocumentLayout(QtGui.QPlainTextDocumentLayout(doc))
+        self.text_edit.setDocument(doc)
+
+        # print(dir(item))
+        # print(item.data)
+
+        # print(dir(self.text_edit))
+        # model = ItemTableModel()
+        # self.table_view.setModel(model)
 
     def _clear_items(self):
         self._items = []
@@ -84,13 +103,33 @@ class OpenPasswordGUI(QtGui.QWidget):
         password = self.sender().text()
 
 
+class ItemTableModel(QtCore.QAbstractTableModel):
+    def __init__(self, *args):
+        QtCore.QAbstractTableModel.__init__(self, *args)
 
+    def rowCount(self, parent):
+        return 1
+
+    def columnCount(self, parent):
+        return 2
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        # if role != Qt.DisplayRole:
+        #     return None
+
+        return "foo"
+
+    def headerData(self, col, orientation, role):
+        return None
 
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
-    keychain = AgileKeychain('test.agilekeychain')
+    # keychain = AgileKeychain('test.agilekeychain')
+    keychain = AgileKeychain('/home/niko/1p.agilekeychain')
 
     op = OpenPasswordGUI(keychain)
     op.load_ui(QtUiTools.QUiLoader(), 'ui')
